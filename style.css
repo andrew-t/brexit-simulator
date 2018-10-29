@@ -1,0 +1,17 @@
+body {
+	margin: 0;
+	padding: 0;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+	background: #000099;
+}
+
+#stars > div {
+	position: absolute;
+	width: 5vh;
+	height: 5vh;
+	background: url('star.svg');
+	background-size: contain;
+	background-origin: 50% 50%;
+}
