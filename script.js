@@ -11,6 +11,51 @@ document.addEventListener('DOMContentLoaded', e => {
 		starContainer.appendChild(star);
 	}
 
+	// extract what we know about the regions
+	const regions = [ ...document.getElementsByTagName('path') ].map(path => {
+		const coords = [];
+		let command = null, lastCommand = null;
+		for (const c of path.getAttribute('d').split(' '))
+			if (c == 'z') {
+				// do nothing
+			} else if (/^[a-z]$/i.test(c)) {
+				// if (command) throw new Error('double command: ' + command + ', ' + c);
+				command = c;
+			} else if (c) {
+				if (!/^-?\d+(\.\d+)?(e-?\d+)?(,-?\d+(\.\d+)?(e-?\d+)?)?$/.test(c))
+					throw new Error('expected numbers, got ' + c);
+				const [ x, y ] = c.split(',').map(parseFloat),
+					xy = y == undefined ? null : new Vector(x, y),
+					last = coords[coords.length - 1]
+						|| new Vector(0, 0);
+				// if (isNaN(x + y)) throw new Error('Unparsable coordinates: ' + c)
+				switch (command) {
+					case 'm':
+						if (lastCommand == 'm') coords.pop();
+					case 'l': case 'c': case null:
+						coords.push(last.clone().add(xy)); break;
+					case 'h':
+						if (y != undefined) throw new Error('y on h');
+						coords.push(new Vector(last.x, last.y + x)); break;
+					case 'v': 
+						if (y != undefined) throw new Error('y on v');
+						coords.push(new Vector(last.x + x, last.y)); break;
+					default: throw new Error('unexpected command: ' + command);
+				}
+				// command = null;	
+			}
+		return {
+			coords: coords.map(coord =>
+				coord.clone()
+					.subtract(new Vector(500, 920))
+					//.add(new Vector(248, 5.249756))
+					.multiply(2 / 3000)),
+			name: path.getAttribute('data-name') 
+				|| (path.children[0] ? path.children[0].innerHTML : null),
+			path
+		};
+	});
+
 	// sizing and positioning
 	let w, h, x0, y0, r;
 	function size() {
@@ -74,7 +119,7 @@ document.addEventListener('DOMContentLoaded', e => {
 	function normalisedClientCoords(e) {
 		return new Vector(e.clientX - x0, e.clientY - y0).divide(r);
 	}
-	const comOffset = new Vector(2 / 9, 2 * 1.84 / 9);
+	const comOffset = new Vector(1 / 9, 1.84 / 9);
 	function currentCentreOfMassCoords() {
 		return comOffset
 			.clone()
@@ -111,6 +156,14 @@ document.addEventListener('DOMContentLoaded', e => {
 			uk.style.transform = `
 				translate(${ukPosition.x * r}px, ${ukPosition.y * r}px)
 				rotate(${ukAngle}rad)`;
+			for (const region of regions) if (!region.gone) {
+				for (const coord of region.coords)
+					if (coord.clone().rotate(ukAngle).add(ukPosition).lengthSquared() > 0.9) {
+						region.gone = true;
+						break;
+					}
+				if (region.gone) region.path.parentElement.removeChild(region.path);
+			}
 			e.preventDefault();
 		}
 	});

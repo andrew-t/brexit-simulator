@@ -32,7 +32,7 @@ class Vector {
 		const s = Math.sin(t), c = Math.cos(t);
 		[ this.y, this.x ] = [
 			c * this.y + s * this.x,
-			c * this.x - s * this.x
+			c * this.x - s * this.y
 		];
 		this.validate();
 		return this;
@@ -42,5 +42,9 @@ class Vector {
 	lengthSquared() { return this.x * this.x + this.y * this.y; }
 	angle() { return Math.atan2(this.y, this.x); }
 	normalise() { return this.divide(this.length()); }
-	validate() { if (isNaN(this.x + this.y)) throw new Error('NaN in Vector'); }
+	validate() {
+		if (isNaN(this.x + this.y))
+			throw new Error('NaN in Vector');
+		return this;
+	}
 }
