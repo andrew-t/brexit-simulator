@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', e => {
 			if (starSpeed < 8) starSpeed += 0.00001 * t;
 			starAngle += starSpeed;
 			for (const star of stars) star.style.transform = `rotate(${ starAngle }deg)`;
-			if (t > 5000 && flagSpeed < 8) flagSpeed += 0.000001 * t;
+			if (t > 5000 && flagSpeed < 8) flagSpeed += 0.000005 * t;
 			flagAngle += flagSpeed;
 			starContainer.style.transform = `rotate(${ flagAngle }deg)`;
 		}
