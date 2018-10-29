@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', e => {
 	const starContainer = document.getElementById('stars'),
 		uk = document.getElementById('uk'),
 		eire = document.getElementById('eire'),
+		intro = document.getElementById('intro'),
 		stars = [];
 	for (let i = 0; i < 12; ++i) {
 		const star = document.createElement('div');
@@ -56,6 +57,27 @@ document.addEventListener('DOMContentLoaded', e => {
 		};
 	});
 
+	// generate some spare uks because let's face it, we're going to need them
+	function cloneDom(dom) {
+		const testTube = document.createElement('div');
+		testTube.innerHTML = dom.outerHTML;
+		return testTube.children[0];
+	}
+	const ukClone = cloneDom(uk);
+	for (const region of [ ...ukClone.querySelectorAll('path') ])
+		region.parentElement.removeChild(region);
+	function spareUk(region) {
+		const spareUk = cloneDom(ukClone);
+		spareUk.classList.add('map');
+		spareUk.style.transform = uk.style.transform;
+		spareUk.style.width = uk.style.width;
+		spareUk.style.height = uk.style.height;
+		spareUk.style.left = uk.style.left;
+		spareUk.style.top = uk.style.top;
+		spareUk.querySelector('#layer1').appendChild(region);
+		return spareUk;
+	}
+
 	// sizing and positioning
 	let w, h, x0, y0, r;
 	function size() {
@@ -98,9 +120,23 @@ document.addEventListener('DOMContentLoaded', e => {
 		ukAngle = 0;
 	function frame() {
 		const now = Date.now(),
-			delay = Math.min(now - lastFrame, 100);
+			delay = Math.min(now - lastFrame, 100),
+			lastT = t;
 		t += delay;
 		lastFrame = now;
+
+		// countdown
+		for (let i = 0; i <= 3; ++i) {
+			const end = 7000 - i * 1000,
+				start = end - 1000;
+			if (t > end && lastT <= end)
+				document.getElementById('countdown-' + i).classList.add('gone');
+			if (t > end && lastT <= end) {
+				const el = document.getElementById('countdown-' + i);
+				el.classList.remove('gone');
+				setTimeout(() => el.classList.add('hidden'))
+			}
+		}
 
 		// spin up the buzzsaw
 		if (t > 1000) {
@@ -114,7 +150,6 @@ document.addEventListener('DOMContentLoaded', e => {
 
 		requestAnimationFrame(frame);
 	}
-	requestAnimationFrame(frame);
 
 	function normalisedClientCoords(e) {
 		return new Vector(e.clientX - x0, e.clientY - y0).divide(r);
@@ -128,6 +163,8 @@ document.addEventListener('DOMContentLoaded', e => {
 	}
 
 	uk.addEventListener('mousedown', e => {
+		e.preventDefault();
+		if (t < 7000) return;
 		const xy = normalisedClientCoords(e);
 		dragging = {
 			last: xy,
@@ -136,7 +173,6 @@ document.addEventListener('DOMContentLoaded', e => {
 				.length()
 		};
 		console.log(currentCentreOfMassCoords(), dragging);
-		e.preventDefault();
 	});
 
 	window.addEventListener('mousemove', e => {
@@ -157,13 +193,29 @@ document.addEventListener('DOMContentLoaded', e => {
 				translate(${ukPosition.x * r}px, ${ukPosition.y * r}px)
 				rotate(${ukAngle}rad)`;
 			for (const region of regions) if (!region.gone) {
-				for (const coord of region.coords)
-					if (coord.clone().rotate(ukAngle).add(ukPosition).lengthSquared() > 0.9) {
+				let xy;
+				for (const coord of region.coords) {
+					xy = coord.clone().rotate(ukAngle).add(ukPosition);
+					if (xy.lengthSquared() > 0.9) {
 						region.gone = true;
 						break;
 					}
-				if (region.gone) region.path.parentElement.removeChild(region.path);
+				}
+				if (region.gone) {
+					region.path.parentElement.removeChild(region.path);
+					const shard = spareUk(region.path);
+					document.body.appendChild(shard);
+					const direction = xy.angle() + Math.PI / 2 + Math.random() * 0.5 - 0.25;
+					shard.style.transition = 'transform 1500ms';
+					setTimeout(() => shard.style.transform = `
+						translate(
+							${Math.cos(direction) * (window.innerWidth + window.innerHeight)}px,
+							${Math.sin(direction) * (window.innerWidth + window.innerHeight)}px)
+						rotate(400deg)`);
+				}
 			}
+			if (regions.every(r => r.gone))
+				document.getElementById('game-over').classList.remove('hidden');
 			e.preventDefault();
 		}
 	});
@@ -173,6 +225,12 @@ document.addEventListener('DOMContentLoaded', e => {
 			e.preventDefault();
 			dragging = null;
 		}
+	});
+
+	intro.addEventListener('click', e => {
+		intro.classList.add('hidden');
+		setTimeout(() => intro.classList.add('gone'), 300);
+		requestAnimationFrame(frame);
 	});
 
 });
