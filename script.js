@@ -47,7 +47,9 @@ document.addEventListener('DOMContentLoaded', e => {
 
 	let t = 0, lastFrame = Date.now(),
 		starAngle = 0, flagAngle = 0,
-		starSpeed = 0, flagSpeed = 0;
+		starSpeed = 0, flagSpeed = 0,
+		dragging = null,
+		ukPosition = { x: 0, y: 0 };
 	function frame() {
 		const now = Date.now(),
 			delay = Math.min(now - lastFrame, 100);
@@ -67,4 +69,33 @@ document.addEventListener('DOMContentLoaded', e => {
 		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);
+
+	uk.addEventListener('mousedown', e => {
+		dragging = {
+			lastX: e.clientX,
+			lastY: e.clientY
+		};
+		e.preventDefault();
+	});
+
+	window.addEventListener('mousemove', e => {
+		if (dragging) {
+			ukPosition.x += (e.clientX - dragging.lastX) / r;
+			dragging.lastX = e.clientX;
+			ukPosition.y += (e.clientY - dragging.lastY) / r;
+			dragging.lastY = e.clientY;
+			uk.style.transform = `translate(
+				${ukPosition.x * r}px,
+				${ukPosition.y * r}px)`;
+			e.preventDefault();
+		}
+	});
+
+	window.addEventListener('mouseup', e => {
+		if (dragging) {
+			e.preventDefault();
+			dragging = null;
+		}
+	});
+
 });
