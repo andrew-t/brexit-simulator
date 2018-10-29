@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', e => {
 		y0 = h / 2;
 		// the real flag is 27x18 and the circle has radius 6, so:
 		r = Math.min(w, h) / 3;
-		console.log('r =', r);
 		// the stars have radius 1, so:
 		const theta = Math.PI / 6;
 		starContainer.style.width = `${ 7 * r / 3 }px`;
