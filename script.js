@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', e => {
 		starAngle = 0, flagAngle = 0,
 		starSpeed = 0, flagSpeed = 0,
 		dragging = null,
-		ukPosition = { x: 0, y: 0 };
+		ukPosition = new Vector(0, 0),
+		ukAngle = 0;
 	function frame() {
 		const now = Date.now(),
 			delay = Math.min(now - lastFrame, 100);
@@ -70,23 +71,46 @@ document.addEventListener('DOMContentLoaded', e => {
 	}
 	requestAnimationFrame(frame);
 
+	function normalisedClientCoords(e) {
+		return new Vector(e.clientX - x0, e.clientY - y0).divide(r);
+	}
+	const comOffset = new Vector(2 / 9, 2 * 1.84 / 9);
+	function currentCentreOfMassCoords() {
+		return comOffset
+			.clone()
+			.rotate(ukAngle)
+			.add(ukPosition);
+	}
+
 	uk.addEventListener('mousedown', e => {
+		const xy = normalisedClientCoords(e);
 		dragging = {
-			lastX: e.clientX,
-			lastY: e.clientY
+			last: xy,
+			comDistance: xy.clone()
+				.subtract(currentCentreOfMassCoords())
+				.length()
 		};
+		console.log(currentCentreOfMassCoords(), dragging);
 		e.preventDefault();
 	});
 
 	window.addEventListener('mousemove', e => {
 		if (dragging) {
-			ukPosition.x += (e.clientX - dragging.lastX) / r;
-			dragging.lastX = e.clientX;
-			ukPosition.y += (e.clientY - dragging.lastY) / r;
-			dragging.lastY = e.clientY;
-			uk.style.transform = `translate(
-				${ukPosition.x * r}px,
-				${ukPosition.y * r}px)`;
+			const xy = normalisedClientCoords(e),
+				com = currentCentreOfMassCoords();
+			// adjust the angle by assuming the centre of mass doesn't move
+			ukAngle += xy.clone().subtract(com).angle()
+				- dragging.last.clone().subtract(com).angle();
+			// move the centre of mass
+			com.subtract(xy).normalise().multiply(dragging.comDistance).add(xy);
+			// move the uk based on that
+			ukPosition = com.clone().subtract(
+				comOffset.clone().rotate(ukAngle));
+			// store for next time
+			dragging.last = xy;
+			uk.style.transform = `
+				translate(${ukPosition.x * r}px, ${ukPosition.y * r}px)
+				rotate(${ukAngle}rad)`;
 			e.preventDefault();
 		}
 	});
