@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', e => {
 
 	// set up the required dom elements
 	const starContainer = document.getElementById('stars'),
+		uk = document.getElementById('uk'),
+		eire = document.getElementById('eire'),
 		stars = [];
 	for (let i = 0; i < 12; ++i) {
 		const star = document.createElement('div');
@@ -30,6 +32,14 @@ document.addEventListener('DOMContentLoaded', e => {
 			star.style.height = `${ r / 3 }px`;
 			star.style.top = `${ r + r * Math.cos(i * theta) }px`;
 			star.style.left = `${ r + r * Math.sin(i * theta) }px`;
+		}
+		const mapHeight = 4 * r / 3,
+			mapWidth = mapHeight / 1.84;
+		for (const map of [ ...document.getElementsByClassName('map') ]) {
+			map.style.height = `${mapHeight}px`;
+			map.style.width = `${mapWidth}px`;
+			map.style.left = `${x0 - mapWidth / 2}px`;
+			map.style.top = `${y0 - mapHeight / 2}px`;
 		}
 	}
 	window.addEventListener('resize', size);

@@ -19,3 +19,7 @@ body {
 	background-position: 0px 500%;
 	background-repeat: no-repeat;
 }
+
+.map {
+	position: absolute;
+}
