@@ -27,7 +27,7 @@ body {
 	cursor: hand;
 }
 
-#intro, #game-over {
+#intro, .announcement {
 	background: rgba(0, 0, 0, 0.5);
 	transition: opacity 300ms;
 	padding: 30vh 5vw;
@@ -44,7 +44,7 @@ a:hover { color: #ff8800; }
 	display: none;
 }
 
-#intro, .countdown, #game-over {
+#intro, .countdown, .announcement {
 	position: absolute;
 	z-index: 100;
 	left: 0;
@@ -67,7 +67,7 @@ a:hover { color: #ff8800; }
 	transform: scale(1.5);
 	opacity: 0;
 }
-#game-over {
+.announcement {
 	font-size: 10vmin;
 	pointer-events: none;
 }

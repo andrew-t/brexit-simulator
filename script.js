@@ -117,8 +117,11 @@ document.addEventListener('DOMContentLoaded', e => {
 		starSpeed = 0, flagSpeed = 0,
 		dragging = null,
 		ukPosition = new Vector(0, 0),
-		ukAngle = 0;
+		ukAngle = 0,
+		paused = false;
 	function frame() {
+		if (paused) { requestAnimationFrame(frame); return; }
+
 		const now = Date.now(),
 			delay = Math.min(now - lastFrame, 100),
 			lastT = t;
@@ -162,10 +165,29 @@ document.addEventListener('DOMContentLoaded', e => {
 			.add(ukPosition);
 	}
 
-	uk.addEventListener('mousedown', e => {
+	uk.addEventListener('mousedown', e => startDrag(e, e));
+	window.addEventListener('mousemove', e => moveDrag(e, e));
+	window.addEventListener('mouseup', e => endDrag(e));
+	uk.addEventListener('touchstart', e => {
+		if (e.touches.length == 1)
+			startDrag(e, e.touches[0]);
+		dragging.touchId = e.touches[0].identifier;
+	});
+	window.addEventListener('touchmove', e => {
+		if (!dragging) return;
+		const pointer = [ ...e.touches ]
+			.find(t => t.identifier == dragging.touchId);
+		if (pointer) moveDrag(e, pointer);
+	});
+	window.addEventListener('touchend', e => {
+		if (dragging && ![ ...e.touches ].some(t => t.identifier == dragging.touchId))
+			endDrag(e);
+	});
+
+	function startDrag(e, pointer) {
 		e.preventDefault();
 		if (t < 7000) return;
-		const xy = normalisedClientCoords(e);
+		const xy = normalisedClientCoords(pointer);
 		dragging = {
 			last: xy,
 			comDistance: xy.clone()
@@ -173,11 +195,11 @@ document.addEventListener('DOMContentLoaded', e => {
 				.length()
 		};
 		console.log(currentCentreOfMassCoords(), dragging);
-	});
+	}
 
-	window.addEventListener('mousemove', e => {
+	function moveDrag(e, pointer) {
 		if (dragging) {
-			const xy = normalisedClientCoords(e),
+			const xy = normalisedClientCoords(pointer),
 				com = currentCentreOfMassCoords();
 			// adjust the angle by assuming the centre of mass doesn't move
 			ukAngle += xy.clone().subtract(com).angle()
@@ -202,6 +224,7 @@ document.addEventListener('DOMContentLoaded', e => {
 					}
 				}
 				if (region.gone) {
+					console.log('Bye bye,', region.name, region.path.id);
 					region.path.parentElement.removeChild(region.path);
 					const shard = spareUk(region.path);
 					document.body.appendChild(shard);
@@ -212,20 +235,34 @@ document.addEventListener('DOMContentLoaded', e => {
 							${Math.cos(direction) * (window.innerWidth + window.innerHeight)}px,
 							${Math.sin(direction) * (window.innerWidth + window.innerHeight)}px)
 						rotate(400deg)`);
+					if (region.name == 'Cornwall'
+					&& regions.every(r => (r.name == 'Cornwall') == !!r.gone)) {
+						const o = document.getElementById('cornwall');
+						o.classList.remove('hidden');
+						paused = true; dragging = null;
+						window.addEventListener('click', clear);
+						function clear(e) {
+							e.preventDefault();
+							paused = false;
+							o.classList.add('hidden');
+							dragging = null;
+							window.removeEventListener('mousedown', clear);
+						}
+					}
 				}
 			}
 			if (regions.every(r => r.gone))
 				document.getElementById('game-over').classList.remove('hidden');
 			e.preventDefault();
 		}
-	});
+	}
 
-	window.addEventListener('mouseup', e => {
+	function endDrag(e) {
 		if (dragging) {
 			e.preventDefault();
 			dragging = null;
 		}
-	});
+	}
 
 	intro.addEventListener('click', e => {
 		intro.classList.add('hidden');
